@@ -1,4 +1,4 @@
-# OmniPrice AI — Real-Time Multi-Domain Autonomous Dynamic Pricing Engine
+# AI Dynamic Pricing Engine
 
 > **Hackathon Architecture Showcase** &middot; Built as a modular, production-ready, reusable AI Dynamic Pricing Platform for **Hotels, Retail Products, Flight Tickets, and Bundled Travel Packages**.
 
