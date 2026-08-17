@@ -1,0 +1,44 @@
+{
+  "model_type": "hist_gb",
+  "training_dataset": "combined_demand_training.csv",
+  "domains": [
+    "hotel",
+    "product",
+    "flight",
+    "travel_package"
+  ],
+  "training_samples": 8000,
+  "test_samples": 2000,
+  "random_seed": 42,
+  "sklearn_version": "1.9.0",
+  "training_time_seconds": 3.187,
+  "metrics": {
+    "mae": 3.456,
+    "rmse": 4.525,
+    "r2_score": 0.9527
+  },
+  "features_numeric": [
+    "base_price",
+    "current_price",
+    "competitor_price",
+    "price_ratio",
+    "occupancy_rate",
+    "inventory_ratio",
+    "inventory_remaining",
+    "days_remaining",
+    "is_weekend",
+    "season_multiplier",
+    "event_multiplier",
+    "booking_velocity",
+    "price_sensitivity",
+    "purchase_frequency"
+  ],
+  "features_categorical": [
+    "domain",
+    "customer_segment",
+    "season",
+    "special_event"
+  ],
+  "saved_at_timestamp": "2026-08-17 09:08:12 UTC",
+  "status": "trained_and_persisted"
+}

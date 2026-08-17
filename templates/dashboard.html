@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Dynamic Pricing Engine</title>
+  <meta name="description" content="Enterprise multi-domain real-time dynamic pricing engine powered by machine learning, automated guardrails, and explainable AI.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body class="theme-dark">
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title" style="font-size: 1.05rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase;">Real-Time Dynamic Pricing Engine</span>
+        </div>
+      </div>
+
+      <div class="domain-pills" id="domainSelector">
+        <button class="domain-btn active" data-domain="hotel" id="btnDomainHotel">
+          <span class="btn-icon">🏨</span> Hotels
+        </button>
+        <button class="domain-btn" data-domain="product" id="btnDomainProduct">
+          <span class="btn-icon">📦</span> Products
+        </button>
+        <button class="domain-btn" data-domain="flight" id="btnDomainFlight">
+          <span class="btn-icon">✈️</span> Flights
+        </button>
+        <button class="domain-btn" data-domain="travel_package" id="btnDomainPackage">
+          <span class="btn-icon">🏖️</span> Travel Packages
+        </button>
+        <button class="domain-btn" data-domain="all" id="btnDomainAll">
+          <span class="btn-icon">🌐</span> All 4 Domains
+        </button>
+      </div>
+
+      <div class="entity-selector-wrapper" id="entitySelectorContainer">
+        <span class="entity-select-label">Item:</span>
+        <select id="entitySelect" class="entity-select-dropdown" title="Select entity within domain">
+          <!-- Populated dynamically via JavaScript -->
+        </select>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="badge-status-group">
+        <div class="live-pulse-badge" id="liveSourceBadge">
+          <span class="pulse-ring"></span>
+          <span class="pulse-dot"></span>
+          <span class="badge-label" id="dataSourceText">SIMULATED REAL-TIME DATA</span>
+        </div>
+        <div class="seed-pill" title="Deterministic simulation random seed">
+          <span class="seed-label">SEED:</span>
+          <span class="seed-value" id="currentSeedValue">42</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-main">
+
+    <!-- Demo Interactive Trigger Bar -->
+    <section class="demo-controls-banner">
+      <div class="controls-header">
+        <div class="controls-title">
+          <span class="control-sparkle">⚡</span>
+          <span><strong>Real-Time Live Event Simulator</strong> &middot; Click triggers below to test recalculation</span>
+        </div>
+        <div class="controls-meta">
+          <span class="timer-label">Next tick in: <strong id="tickCountdown">3s</strong></span>
+          <button class="btn-pause" id="btnToggleAutoTick">⏸ Pause Stream</button>
+        </div>
+      </div>
+
+      <div class="action-buttons-grid">
+        <div class="action-pair-col">
+          <button class="action-btn btn-demand-up" id="btnIncreaseDemand" title="Surge booking velocity and season multiplier">
+            <span class="btn-icon">📈</span> Demand Surge
+          </button>
+          <button class="action-btn btn-demand-down" id="btnDecreaseDemand" title="Simulate market slowdown">
+            <span class="btn-icon">📉</span> Demand Slowdown
+          </button>
+        </div>
+
+        <div class="action-pair-col">
+          <button class="action-btn btn-comp-up" id="btnIncreaseComp" title="Hike competitor price to capture surplus">
+            <span class="btn-icon">🏷️</span> Competitor Price Increase
+          </button>
+          <button class="action-btn btn-comp-down" id="btnDecreaseComp" title="Lower competitor price to test parity defense">
+            <span class="btn-icon">🏷️</span> Competitor Price Decrease
+          </button>
+        </div>
+
+        <div class="action-pair-col">
+          <button class="action-btn btn-stock-down" id="btnReduceInventory" title="Drop stock to test scarcity pricing">
+            <span class="btn-icon">📦</span> Decrease Inventory
+          </button>
+          <button class="action-btn btn-booking" id="btnSimulateBooking" title="Simulate incoming confirmed customer booking">
+            <span class="btn-icon">🛒</span> New Booking
+          </button>
+        </div>
+
+        <div class="action-pair-col">
+          <button class="action-btn btn-comp-up" id="btnSimulateEvent" style="border-color: var(--accent-purple); color: #c084fc;" title="Inject major special event, festival, or concert surge">
+            <span class="btn-icon">🎉</span> Special Event
+          </button>
+          <button class="action-btn btn-reset" id="btnResetScenario" title="Reset to Seed 42 baseline">
+            <span class="btn-icon">↺</span> Reset Scenario
+          </button>
+        </div>
+      </div>
+
+      <div class="recent-event-ticker" id="eventTicker">
+        <span class="ticker-label">Live Stream:</span>
+        <span class="ticker-text" id="eventTickerText">System initialized with deterministic seed 42. Listening for market updates...</span>
+      </div>
+    </section>
+
+    <!-- KPI Summary Cards Row -->
+    <section class="kpi-grid">
+      <div class="kpi-card" id="kpiCardPrice">
+        <div class="kpi-top">
+          <span class="kpi-title">Recommended Price</span>
+          <span class="kpi-tag" id="priceDeltaTag">+0.0%</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-hero-number" id="kpiRecPrice">₹5,000</span>
+          <span class="kpi-sub" id="kpiCurrentPrice">Base: ₹5,000</span>
+        </div>
+        <div class="kpi-footer" id="kpiPriceFooter">
+          <span class="guardrail-indicator" id="guardrailStatusBadge">✓ Normal Bounds</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpiCardRevenue">
+        <div class="kpi-top">
+          <span class="kpi-title">Est. Revenue Impact</span>
+          <span class="kpi-tag tag-success" id="kpiRevDeltaTag">+0.0%</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-hero-number highlight-green" id="kpiEstRevenue">₹0</span>
+          <span class="kpi-sub" id="kpiRevDiff">+₹0 projected</span>
+        </div>
+        <div class="kpi-footer">
+          <span>Elasticity-adjusted revenue forecast</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpiCardDemand">
+        <div class="kpi-top">
+          <span class="kpi-title">ML Predicted Demand</span>
+          <span class="kpi-tag" id="kpiDemandLevelTag">High</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-hero-number" id="kpiDemandScore">72.4</span>
+          <span class="kpi-scale">/ 100</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="demandProgressBar" style="width: 72%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpiCardScarcity">
+        <div class="kpi-top">
+          <span class="kpi-title" id="kpiTitleScarcity">Capacity & Inventory</span>
+          <span class="kpi-tag" id="kpiOccRateTag">76% Booked</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-hero-number" id="kpiInventoryRemaining">12</span>
+          <span class="kpi-sub" id="kpiTotalCapacity">of 50 available</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill fill-amber" id="inventoryProgressBar" style="width: 76%;"></div>
+        </div>
+      </div>
+
+      <div class="kpi-card" id="kpiCardLatency">
+        <div class="kpi-top">
+          <span class="kpi-title">Decision Latency</span>
+          <span class="kpi-tag tag-cyan">Real-time</span>
+        </div>
+        <div class="kpi-value-row">
+          <span class="kpi-hero-number" id="kpiLatency">2.4<small>ms</small></span>
+          <span class="kpi-sub" id="kpiConfidence">ML Conf: 95.2%</span>
+        </div>
+        <div class="kpi-footer">
+          <span>HistGradientBoosting (R²: 0.9530)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Single Domain Active Detail OR Multi-Domain Table View -->
+    <div id="singleDomainView" class="domain-content-block">
+
+      <!-- Hero Pricing & Explanation Split Section -->
+      <section class="pricing-decision-grid">
+        
+        <!-- Left: Current Entity Snapshot & Live Factors -->
+        <div class="card decision-hero-card">
+          <div class="card-header">
+            <div>
+              <span class="badge-sub-type" id="entitySubType">Deluxe Room</span>
+              <h2 class="entity-title" id="entityTitle">Grand Palace Hotel</h2>
+            </div>
+            <div class="action-buttons-group">
+              <button class="btn-action-primary" id="btnOpenOverrideModal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                Manager Override
+              </button>
+            </div>
+          </div>
+
+          <div class="metrics-quad-grid">
+            <div class="metric-quad">
+              <span class="quad-label">Current Selling Price</span>
+              <span class="quad-value" id="metricCurrentPrice">₹5,200</span>
+              <span class="quad-hint" id="metricBasePrice">Base: ₹5,000</span>
+            </div>
+            <div class="metric-quad">
+              <span class="quad-label" id="quadLabelComp">Competitor Benchmark</span>
+              <span class="quad-value highlight-orange" id="metricCompPrice">₹5,400</span>
+              <span class="quad-hint" id="metricCompDiff">+3.8% vs ours</span>
+            </div>
+            <div class="metric-quad">
+              <span class="quad-label" id="quadLabelVelocity">Booking Velocity & Conversion</span>
+              <span class="quad-value" id="metricVelocity">4.2 /day</span>
+              <span class="quad-hint" id="metricConversion">Conv. Rate: 38.0%</span>
+            </div>
+            <div class="metric-quad">
+              <span class="quad-label">Special Event & Timing</span>
+              <span class="quad-value" id="metricEvent">Normal Day</span>
+              <span class="quad-hint" id="metricSeason">Peak Season (1.25x)</span>
+            </div>
+          </div>
+
+          <!-- Price Recommendation Bar Box -->
+          <div class="recommendation-callout-box">
+            <div class="callout-left">
+              <span class="callout-subtitle">Recommended Price</span>
+              <div class="callout-price-row">
+                <span class="callout-price" id="calloutRecPrice">₹5,480</span>
+                <span class="callout-pct" id="calloutPctBadge">+5.4% Uplift</span>
+              </div>
+              <span class="callout-guardrail-note" id="calloutGuardrailNote">Within business boundaries (₹3,250 – ₹8,250)</span>
+            </div>
+            <div class="callout-right">
+              <div class="quick-override-buttons">
+                <button class="btn-quick-accept" id="btnQuickAccept">✓ Accept</button>
+                <button class="btn-quick-reject" id="btnQuickReject">✕ Reject</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Buying Likelihood Section -->
+          <div class="buying-likelihood-box" id="buyingLikelihoodBox">
+            <div class="likelihood-header">
+              <span class="likelihood-title" id="likelihoodTitle">Customer Buying Likelihood</span>
+              <span class="likelihood-badge" id="likelihoodStatusBadge">Likely to buy</span>
+            </div>
+            <div class="likelihood-body">
+              <div class="likelihood-value-row">
+                <span class="likelihood-number" id="likelihoodPct">78%</span>
+                <span class="likelihood-status-text" id="likelihoodStatusText">Likely to buy</span>
+              </div>
+              <div class="likelihood-progress-track">
+                <div class="likelihood-progress-fill" id="likelihoodProgressFill" style="width: 78%;"></div>
+              </div>
+              <span class="likelihood-explanation">Estimated from current demand, price and buying activity.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Explainable AI Driver Breakdown -->
+        <div class="card xai-card">
+          <div class="card-header">
+            <div class="header-with-icon">
+              <div class="icon-circle icon-purple">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </div>
+              <div>
+                <h3 class="card-title">🤖 Why Model Changed the Price</h3>
+                <span class="card-subtitle">Clear business reasons driving this price recommendation</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="xai-summary-banner" id="xaiSummaryBanner">
+            <p id="xaiSummaryText">Recommended price increased by 5.4% — ₹5,200 → ₹5,480</p>
+          </div>
+
+          <div class="xai-drivers-list" id="xaiDriversList">
+            <!-- Dynamic Driver Cards -->
+          </div>
+
+          <div class="xai-conclusion-banner" id="xaiConclusionBanner" style="margin-top: 1rem; padding: 0.85rem 1.1rem; background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.88rem; color: var(--text-primary); font-weight: 500;">
+            <p id="xaiConclusionText" style="margin: 0; line-height: 1.45;"></p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Charts Row: Market Benchmark, Demand Forecast & Profit Optimization -->
+      <section class="charts-grid">
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Live Price vs Competitor Benchmark</h3>
+            <span class="chart-legend-pill">Real-time Stream</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="priceTrendChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Demand Forecast</h3>
+            <span class="chart-legend-pill">ML Demand Prediction</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="elasticityChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card chart-card-full">
+          <div class="card-header">
+            <h3 class="card-title">Profit: Current Price vs Recommended Price</h3>
+            <span class="chart-legend-pill">Estimated Profit Comparison</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="profitComparisonChart"></canvas>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Multi-Domain Matrix Table (Shows all 4 domains simultaneously) -->
+    <div id="allDomainsView" class="domain-content-block" style="display: none;">
+      <section class="card table-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Multi-Domain Common Dynamic Pricing Engine Matrix</h3>
+            <span class="card-subtitle">One unified engine actively driving pricing across all 4 business domains</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="allDomainsTable">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Item / Entity</th>
+                <th>Sub-Type / Route</th>
+                <th>Current Price</th>
+                <th>Recommended Price</th>
+                <th>Delta</th>
+                <th>Demand Level</th>
+                <th>Inventory / Load</th>
+                <th>Competitor</th>
+                <th>Confidence</th>
+                <th>Guardrails</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="allDomainsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- System Telemetry, Alerts & Audit Log Row -->
+    <section class="monitoring-grid">
+      <!-- Active Alerts -->
+      <div class="card alert-card">
+        <div class="card-header">
+          <div class="header-with-icon">
+            <div class="icon-circle icon-amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <div>
+              <h3 class="card-title">Real-Time Alert Monitor</h3>
+              <span class="card-subtitle">Automated business anomalies & thresholds</span>
+            </div>
+          </div>
+        </div>
+        <div class="alerts-list" id="alertsList">
+          <div class="empty-alerts">All systems operating within normal parameters.</div>
+        </div>
+      </div>
+
+      <!-- Human Override Audit Trail -->
+      <div class="card audit-card">
+        <div class="card-header">
+          <div class="header-with-icon">
+            <div class="icon-circle icon-blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <div>
+              <h3 class="card-title">Pricing Decision History</h3>
+              <span class="card-subtitle">Record of pricing decisions and manager actions</span>
+            </div>
+          </div>
+        </div>
+        <div class="audit-table-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Audit ID</th>
+                <th>Time (IST)</th>
+                <th>Domain</th>
+                <th>Entity</th>
+                <th>Rec Price</th>
+                <th>Final Price</th>
+                <th>Action</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <tr>
+                <td colspan="8" class="empty-row">No overrides recorded yet. Click "Manager Override" to test human approval.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Human Override Modal Dialog -->
+  <div class="modal-backdrop" id="overrideModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Human-in-the-Loop Pricing Decision</h3>
+        <button class="modal-close" id="btnCloseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-entity-summary">
+          <span class="summary-domain" id="modalDomainLabel">Hotel Room</span>
+          <h4 id="modalItemName">Grand Palace Hotel</h4>
+          <div class="modal-price-comparison">
+            <div class="comparison-item">
+              <span class="comp-lbl">Current Price</span>
+              <span class="comp-val" id="modalCurrentPrice">₹5,200</span>
+            </div>
+            <div class="comparison-item highlight">
+              <span class="comp-lbl">AI Recommendation</span>
+              <span class="comp-val" id="modalRecPrice">₹5,480</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="overrideForm">
+          <div class="form-group">
+            <label for="overrideActionSelect">Decision Action</label>
+            <select id="overrideActionSelect" class="form-select">
+              <option value="ACCEPT">Accept AI Recommendation</option>
+              <option value="OVERRIDE">Override with Custom Price</option>
+              <option value="REJECT">Reject & Maintain Current Price</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="customPriceGroup" style="display: none;">
+            <label for="customPriceInput">Custom Override Selling Price (₹)</label>
+            <input type="number" id="customPriceInput" class="form-input" placeholder="e.g. 5600" step="10">
+          </div>
+
+          <div class="form-group">
+            <label for="overrideReasonInput">Manager Note / Justification</label>
+            <input type="text" id="overrideReasonInput" class="form-input" placeholder="e.g. VIP event alignment, promotion match" value="Manager approved after market review">
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-modal-cancel" id="btnCancelModal">Cancel</button>
+            <button type="submit" class="btn-modal-submit" id="btnSubmitModal">Confirm & Submit Decision</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <span>Dynamic Pricing Engine &middot; One Engine, Four Domains</span>
+      <div class="footer-metrics">
+        <span>ML Model: HistGradientBoosting (R²: 0.9530, MAE: 3.438, RMSE: 4.512)</span>
+        <span>Deterministic Seed: 42</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
