@@ -57,9 +57,13 @@
 
     <div class="header-right">
       <div class="badge-status-group">
-        
+        <div class="live-pulse-badge" id="liveSourceBadge">
+          <span class="pulse-ring"></span>
+          <span class="pulse-dot"></span>
+          <span class="badge-label" id="dataSourceText">SIMULATED REAL-TIME DATA</span>
+        </div>
         <div class="seed-pill" title="Deterministic simulation random seed">
-          <span class="seed-label">SEED:</span>
+          <span class="seed-label">RANDOM SEED:</span>
           <span class="seed-value" id="currentSeedValue">42</span>
         </div>
       </div>
@@ -494,7 +498,7 @@
     <div class="footer-content">
       <span>Dynamic Pricing Engine &middot; One Engine, Four Domains</span>
       <div class="footer-metrics">
-        <span>ML Model: HistGradientBoosting (R²: 0.9530, MAE: 3.438, RMSE: 4.512)</span>
+        <span>ML Model: HistGradientBoosting (R²: 0.9527, MAE: 3.456, RMSE: 4.525)</span>
         <span>Deterministic Seed: 42</span>
       </div>
     </div>

@@ -11,7 +11,7 @@
   "test_samples": 2000,
   "random_seed": 42,
   "sklearn_version": "1.9.0",
-  "training_time_seconds": 3.187,
+  "training_time_seconds": 3.3616,
   "metrics": {
     "mae": 3.456,
     "rmse": 4.525,
@@ -39,6 +39,6 @@
     "season",
     "special_event"
   ],
-  "saved_at_timestamp": "2026-08-17 09:08:12 UTC",
+  "saved_at_timestamp": "2026-08-18 04:47:38 UTC",
   "status": "trained_and_persisted"
 }
