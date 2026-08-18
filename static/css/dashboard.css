@@ -279,10 +279,11 @@ body {
 .seed-pill {
   background: #f8fafc;
   border: 1px solid var(--border-subtle);
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  margin-left:40px;
 }
 
 
